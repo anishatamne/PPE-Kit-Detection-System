@@ -1,222 +1,229 @@
 """
 PPE Compliance Monitor — FastAPI Backend
-Install: pip install fastapi uvicorn python-multipart ultralytics mediapipe opencv-python numpy pillow
-Run:     uvicorn main:app --reload --host 0.0.0.0 --port 8000
+Install: pip install fastapi uvicorn[standard] python-multipart opencv-python-headless numpy pillow
+Run:     python main.py
+Then open browser: http://127.0.0.1:8000/health
 """
 
-import cv2
-import json
-import numpy as np
-import uvicorn
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import uvicorn, cv2, json, numpy as np, io
+from ultralytics import YOLO
 from PIL import Image
-import io
-from typing import Optional
 
-# ── Lazy model loading ────────────────────────────────────────────────────────
-_yolo = "E:\ppe detection github\PPE-Kit-Detection-System\model.pt"
-_pose = None
-
-def get_yolo():
-    global _yolo
-    if _yolo is None:
-        from ultralytics import YOLO
-        _yolo = YOLO("yolov8n.pt")          # auto-downloads on first run
-    return _yolo
-
-def get_pose():
-    global _pose
-    if _pose is None:
-        import mediapipe as mp
-        _pose = mp.solutions.pose.Pose(
-            static_image_mode=True,
-            model_complexity=1,
-            min_detection_confidence=0.5,
-        )
-    return _pose
-
-# ── App setup ─────────────────────────────────────────────────────────────────
-app = FastAPI(title="PPE Compliance API", version="1.0.0")
+app = FastAPI(title="PPE Compliance API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # tighten in production
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-PPE_COLORS = {
-    "helmet":  ([20,  90, 180], [35, 255, 255]),   # yellow/orange HSV
-    "vest":    ([5,   150, 150], [20, 255, 255]),   # orange HSV
-    "gloves":  ([100, 80,  80],  [130, 255, 255]),  # blue HSV
-    "mask":    ([0,   0,   200], [180, 30, 255]),   # white-ish HSV
-    "goggles": ([90, 100,  50],  [130, 255, 200]),  # teal HSV
-    "boots":   ([0,   0,   20],  [180, 60, 80]),    # dark HSV
+
+
+YOLO_PATH = r"model.pt"
+POSE_PATH = r"yolov8n-pose.pt"
+
+obj_model = YOLO(YOLO_PATH)
+pose_model = YOLO(POSE_PATH)
+
+# ── Color ranges for PPE (HSV) ────────────────────────────────────────────────
+PPE_HSV = {
+    "helmet":  ([20,  90, 180], [35, 255, 255]),
+    "vest":    ([5,  150, 150], [20, 255, 255]),
+    "gloves":  ([100, 80,  80], [130, 255, 255]),
+    "mask":    ([0,    0, 200], [180,  30, 255]),
+    "goggles": ([90, 100,  50], [130, 255, 200]),
+    "boots":   ([0,    0,  20], [180,  60,  80]),
 }
 
-HEAD_KEYPOINTS  = [0, 1, 2, 3, 4]          # MediaPipe: nose + eyes + ears
-TORSO_KEYPOINTS = [11, 12, 23, 24]         # shoulders + hips
+HEAD_KP  = [0, 1, 2, 3, 4]
+TORSO_KP = [11, 12, 23, 24]
 
+CLASS_MAP = {
+    0: "helmet",
+    1: "gloves",
+    2: "vest",
+    3: "boots",
+    4: "goggles",
+    5: "none",
+    6: "person",
+    7: "no_helmet",
+    8: "no_goggle",
+    9: "no_gloves",
+    10: "no_boots"
+}
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def load_image(data: bytes) -> np.ndarray:
     img = Image.open(io.BytesIO(data)).convert("RGB")
     return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
+def detect_all(img, conf):
+    global obj_model
+    res = obj_model(img, conf=conf, verbose=False)
 
-def detect_humans(img: np.ndarray, conf_threshold: float) -> list[dict]:
-    """Run YOLOv8 — returns list of person bboxes."""
-    results = get_yolo()(img, classes=[0], conf=conf_threshold, verbose=False)
     persons = []
-    for r in results:
-        for box in r.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-            persons.append({
+    objects = []
+
+    for r in res:
+        for b in r.boxes:
+            cls = int(b.cls[0])
+            name = CLASS_MAP.get(cls, "unknown")
+            x1, y1, x2, y2 = map(int, b.xyxy[0].tolist())
+            confidence = round(float(b.conf[0]), 3)
+
+            item = {
+                "class": name,
                 "bbox": [x1, y1, x2, y2],
-                "confidence": round(float(box.conf[0]), 3),
-            })
-    return persons
+                "confidence": confidence
+            }
+
+            if cls == 6:  # person
+                persons.append(item)
+            else:
+                objects.append(item)
+
+    return persons, objects
 
 
-def estimate_pose(img: np.ndarray, bbox: list[int]) -> dict:
-    """Run MediaPipe Pose on a cropped person ROI."""
-    x1, y1, x2, y2 = bbox
-    crop = img[y1:y2, x1:x2]
-    if crop.size == 0:
+def estimate_pose(img, bbox=None, conf=0.25):
+    global pose_model
+
+    results = pose_model(img, conf=conf, verbose=False)
+
+    if not results or results[0].keypoints is None:
         return {"valid": False, "keypoints": []}
 
-    rgb_crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
-    result = get_pose().process(rgb_crop)
+    kpts_all = results[0].keypoints.xy  # shape: (num_persons, 17, 2)
 
-    if not result.pose_landmarks:
+    if kpts_all is None or len(kpts_all) == 0:
         return {"valid": False, "keypoints": []}
 
-    h, w = crop.shape[:2]
+    # If bbox is given → match pose to that person
+    if bbox:
+        x1, y1, x2, y2 = bbox
+        best_match = None
+        max_inside = 0
+
+        for person_kpts in kpts_all:
+            inside = 0
+            for (x, y) in person_kpts:
+                if x1 <= x <= x2 and y1 <= y <= y2:
+                    inside += 1
+
+            if inside > max_inside:
+                max_inside = inside
+                best_match = person_kpts
+
+        if best_match is None or max_inside < 5:
+            return {"valid": False, "keypoints": []}
+
+        selected = best_match
+
+    else:
+        # If no bbox → take first person
+        selected = kpts_all[0]
+
+    # Format output
     kpts = []
-    for lm in result.pose_landmarks.landmark:
+    for (x, y) in selected:
         kpts.append({
-            "x": round(x1 + lm.x * w, 1),
-            "y": round(y1 + lm.y * h, 1),
-            "z": round(lm.z, 4),
-            "visibility": round(lm.visibility, 3),
+            "x": round(float(x), 1),
+            "y": round(float(y), 1),
+            "visibility": 1.0  # YOLO doesn't give visibility
         })
+
     return {"valid": True, "keypoints": kpts}
 
+def detect_ppe(img, person_bbox, detections, required):
+    x1, y1, x2, y2 = person_bbox
 
-def detect_ppe_color(img: np.ndarray, bbox: list[int],
-                     required_ppe: list[str]) -> dict[str, dict]:
-    """
-    Novelty feature: Pose-based PPE verification using color heuristics
-    in anatomically-correct zones (head ROI for helmet, torso ROI for vest).
-    Replace the color heuristic with a custom YOLO PPE model for production.
-    """
-    x1, y1, x2, y2 = bbox
-    h, w = y2 - y1, x2 - x1
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    def iou(boxA, boxB):
+        xa = max(boxA[0], boxB[0])
+        ya = max(boxA[1], boxB[1])
+        xb = min(boxA[2], boxB[2])
+        yb = min(boxA[3], boxB[3])
 
-    def roi_has_color(roi_coords, color_range):
-        rx1, ry1, rx2, ry2 = [max(0, v) for v in roi_coords]
-        roi = hsv[ry1:ry2, rx1:rx2]
-        if roi.size == 0:
-            return 0.0
-        lo, hi = np.array(color_range[0]), np.array(color_range[1])
-        mask = cv2.inRange(roi, lo, hi)
-        ratio = np.count_nonzero(mask) / mask.size
-        return round(float(ratio), 4)
+        inter = max(0, xb - xa) * max(0, yb - ya)
+        areaA = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        areaB = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
 
-    # Anatomical zones
-    head_roi   = [x1, y1,           x2, y1 + int(h * 0.28)]
-    torso_roi  = [x1, y1 + int(h * 0.28), x2, y1 + int(h * 0.62)]
-    hands_roi  = [x1, y1 + int(h * 0.55), x2, y2]
-    feet_roi   = [x1, y2 - int(h * 0.2),  x2, y2]
+        return inter / (areaA + areaB - inter + 1e-6)
 
-    zone_map = {
-        "helmet":  head_roi,
-        "vest":    torso_roi,
-        "gloves":  hands_roi,
-        "mask":    head_roi,
-        "goggles": head_roi,
-        "boots":   feet_roi,
-    }
+    # Filter detections inside this person
+    person_objs = []
+    for d in detections:
+        if iou(person_bbox, d["bbox"]) > 0.3:
+            person_objs.append(d)
 
     results = {}
-    for item in required_ppe:
-        lo, hi = PPE_COLORS.get(item, ([0, 0, 0], [180, 255, 30]))
-        ratio = roi_has_color(zone_map.get(item, torso_roi), (lo, hi))
-        # Confidence scaled from color coverage + a baseline
-        confidence = min(0.99, round(0.25 + ratio * 5, 2))
+
+    for item in required:
+        present = False
+        conf = 0.0
+
+        # Positive detection
+        for d in person_objs:
+            if d["class"] == item:
+                present = True
+                conf = max(conf, d["confidence"])
+
+        # Negative detection overrides
+        neg_class = f"no_{item}"
+        for d in person_objs:
+            if d["class"] == neg_class:
+                present = False
+                conf = max(conf, d["confidence"])
+
         results[item] = {
-            "present": confidence > 0.50,
-            "confidence": confidence,
+            "present": present,
+            "confidence": round(conf, 2)
         }
+
     return results
 
-
-def pose_based_ppe_verification(pose: dict, ppe: dict[str, dict]) -> dict:
-    """
-    Novelty: Cross-check PPE detections against pose keypoint visibility.
-    If head keypoints are occluded, flag helmet detection as uncertain.
-    """
-    if not pose["valid"] or not pose["keypoints"]:
-        return {k: {**v, "pose_verified": False} for k, v in ppe.items()}
-
+def verify_with_pose(pose, ppe):
+    if not pose["valid"]:
+        return {k:{**v,"pose_verified":False} for k,v in ppe.items()}
     kpts = pose["keypoints"]
-
-    def avg_vis(indices):
-        vis = [kpts[i]["visibility"] for i in indices if i < len(kpts)]
-        return sum(vis) / len(vis) if vis else 0.0
-
-    head_vis  = avg_vis(HEAD_KEYPOINTS)
-    torso_vis = avg_vis(TORSO_KEYPOINTS)
-
-    verified = {}
+    def vis(idx): return sum(kpts[i]["visibility"] for i in idx if i<len(kpts))/max(len(idx),1)
+    hv, tv = vis(HEAD_KP), vis(TORSO_KP)
+    out = {}
     for item, det in ppe.items():
-        if item in ("helmet", "mask", "goggles"):
-            certainty = det["confidence"] * (0.4 + 0.6 * head_vis)
-        elif item in ("vest",):
-            certainty = det["confidence"] * (0.4 + 0.6 * torso_vis)
-        else:
-            certainty = det["confidence"]
-        verified[item] = {
-            **det,
-            "confidence": round(certainty, 3),
-            "present": certainty > 0.50,
-            "pose_verified": True,
-        }
-    return verified
+        scale = hv if item in ("helmet","mask","goggles") else tv if item=="vest" else 1.0
+        c = round(det["confidence"]*(0.4+0.6*scale), 3)
+        out[item] = {**det, "confidence": c, "present": c>0.50, "pose_verified": True}
+    return out
 
-
-def compliance_decision(persons: list[dict]) -> list[dict]:
+def make_alerts(persons):
     alerts = []
     for p in persons:
-        missing = [k for k, v in p["ppe"].items() if not v["present"]]
+        missing = [k for k,v in p["ppe"].items() if not v["present"]]
+        p["compliant"] = not missing
         if not missing:
-            p["compliant"] = True
-            alerts.append({
-                "severity": "ok",
+            alerts.append({"severity":"ok",
                 "message": f"Person #{p['id']} fully compliant",
-                "detail": "  ".join(f"{k} ✓" for k in p["ppe"]),
-            })
+                "detail": "  ".join(f"{k} ✓" for k in p["ppe"])})
         else:
-            p["compliant"] = False
-            sev = "danger" if len(missing) > 1 else "warn"
-            alerts.append({
-                "severity": sev,
+            sev = "danger" if len(missing)>1 else "warn"
+            alerts.append({"severity": sev,
                 "message": f"Person #{p['id']} missing {', '.join(missing)}",
-                "detail": f"{'Pose estimation failed — ' if not p['pose_valid'] else ''}"
-                          f"Missing: {', '.join(missing)}",
-            })
+                "detail": ("Pose occluded — " if not p["pose_valid"] else "")
+                          + f"Missing: {', '.join(missing)}"})
     return alerts
 
-
 # ── Routes ────────────────────────────────────────────────────────────────────
-
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "PPE Compliance API"}
+    return {"status": "ok", "service": "PPE Compliance API", "version": "1.0"}
 
+@app.get("/")
+def root():
+    return {"message": "PPE Compliance API is running. Use POST /analyze"}
 
 @app.post("/analyze")
 async def analyze(
@@ -224,78 +231,43 @@ async def analyze(
     confidence_threshold: float = Form(0.50),
     required_ppe: str = Form('["helmet","vest"]'),
 ):
-    if not file.content_type.startswith(("image/", "video/")):
-        raise HTTPException(400, "Only image files are supported currently")
-
     required = json.loads(required_ppe)
-    data = await file.read()
-    img = load_image(data)
+    img = load_image(await file.read())
+    persons_raw, detections = detect_all(img, confidence_threshold)
 
-    # ── Stage 1: Human detection ──────────────────────────────────────────────
-    raw_persons = detect_humans(img, confidence_threshold)
-    if not raw_persons:
-        return JSONResponse({
-            "persons": [],
-            "alerts": [{"severity": "warn",
-                        "message": "No humans detected",
-                        "detail": "Try lowering the confidence threshold"}],
-            "summary": {"total_persons": 0, "compliant": 0,
-                        "violations": 0, "compliance_rate": 0},
-        })
+    if not persons_raw:
+        return {"persons":[], "alerts":[
+            {"severity":"warn","message":"No humans detected",
+             "detail":"Try lowering the confidence threshold or check image quality"}],
+            "summary":{"total_persons":0,"compliant":0,"violations":0,"compliance_rate":0}}
 
     persons = []
-    for idx, p in enumerate(raw_persons):
-        pid = idx + 1
-
-        # ── Stage 2: Pose estimation ──────────────────────────────────────────
+    for i, p in enumerate(persons_raw):
         pose = estimate_pose(img, p["bbox"])
 
-        # ── Stage 3: PPE detection ────────────────────────────────────────────
-        ppe_raw = detect_ppe_color(img, p["bbox"], required)
+        ppe = detect_ppe(img, p["bbox"], detections, required)
 
-        # ── Stage 4: Pose-based PPE verification (novelty) ────────────────────
-        ppe_verified = pose_based_ppe_verification(pose, ppe_raw)
+        ppe = verify_with_pose(pose, ppe)
 
         persons.append({
-            "id": pid,
+            "id": i+1,
             "bbox": p["bbox"],
             "confidence": p["confidence"],
             "pose_valid": pose["valid"],
-            "ppe": ppe_verified,
-            "compliant": False,  # filled in stage 5
+            "ppe": ppe,
+            "compliant": False
         })
 
-    # ── Stage 5: Compliance decision ─────────────────────────────────────────
-    alerts = compliance_decision(persons)
+    alerts = make_alerts(persons)
+    n_ok = sum(1 for p in persons if p["compliant"])
+    return {"persons":persons,"alerts":alerts,
+            "summary":{"total_persons":len(persons),"compliant":n_ok,
+                       "violations":len(persons)-n_ok,
+                       "compliance_rate":round(n_ok/len(persons)*100)}}
 
-    n_compliant  = sum(1 for p in persons if p["compliant"])
-    n_violations = len(persons) - n_compliant
-
-    return {
-        "persons": persons,
-        "alerts": alerts,
-        "summary": {
-            "total_persons": len(persons),
-            "compliant": n_compliant,
-            "violations": n_violations,
-            "compliance_rate": round(n_compliant / len(persons) * 100),
-        },
-    }
-
-
-@app.post("/analyze/batch")
-async def analyze_batch(
-    files: list[UploadFile] = File(...),
-    confidence_threshold: float = Form(0.50),
-    required_ppe: str = Form('["helmet","vest"]'),
-):
-    """Run /analyze on multiple frames (e.g. video keyframes)."""
-    results = []
-    for f in files:
-        single = await analyze(f, confidence_threshold, required_ppe)
-        results.append({"filename": f.filename, "result": single})
-    return {"batch": results, "frame_count": len(results)}
-
-
+# ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    print("\n🟢  Starting PPE Compliance API...")
+    print("📡  Health check: http://127.0.0.1:8000/health")
+    print("📋  API docs:     http://127.0.0.1:8000/docs\n")
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)

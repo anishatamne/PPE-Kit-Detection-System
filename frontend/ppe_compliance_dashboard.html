@@ -1,264 +1,279 @@
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-sans);background:var(--color-background-tertiary)}
-.app{min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans)}
+:root{
+  --bg:#0f1117;--bg2:#181c27;--bg3:#1e2436;--bg4:#242840;
+  --border:#2a2f45;--border2:#363d58;
+  --text:#e8eaf0;--text2:#8b91a8;--text3:#555d7a;
+  --green:#22c55e;--green-bg:#0d2218;--green-border:#164430;
+  --red:#ef4444;--red-bg:#220d0d;--red-border:#441616;
+  --amber:#f59e0b;--amber-bg:#221a08;--amber-border:#44320f;
+  --blue:#3b82f6;--blue-bg:#0d1522;--blue-border:#163055;
+  --accent:#4f6ef7;--accent2:#3b55d9;
+}
+.shell{background:var(--bg);min-height:700px;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:32px;height:32px;background:#178AE2;border-radius:8px;display:flex;align-items:center;justify-content:center}
-.logo-icon svg{width:18px;height:18px;fill:white}
-.logo-text{font-size:15px;font-weight:500;color:var(--color-text-primary)}
-.logo-sub{font-size:12px;color:var(--color-text-secondary)}
-.status-pill{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
-.dot{width:7px;height:7px;border-radius:50%;background:#888}
-.dot.online{background:#3B6D11;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.main{display:flex;flex:1;gap:0}
-.sidebar{width:220px;background:var(--color-background-primary);border-right:0.5px solid var(--color-border-tertiary);padding:16px 12px;display:flex;flex-direction:column;gap:4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--border-radius-md);cursor:pointer;font-size:13px;color:var(--color-text-secondary);transition:background .15s}
-.nav-item:hover{background:var(--color-background-secondary)}
-.nav-item.active{background:var(--color-background-info);color:#0C447C}
-.nav-icon{width:16px;height:16px;opacity:.7}
-.content{flex:1;padding:20px;overflow:auto}
-.page{display:none}
-.page.active{display:block}
-.metrics-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
-.metric-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px}
-.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px}
-.metric-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
-.metric-val.danger{color:#A32D2D}
-.metric-val.success{color:#3B6D11}
-.metric-val.warn{color:#854F0B}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px}
-.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em}
-.upload-zone{border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:32px;text-align:center;cursor:pointer;transition:background .15s;margin-bottom:12px}
-.upload-zone:hover{background:var(--color-background-secondary)}
-.upload-icon{width:36px;height:36px;margin:0 auto 10px;opacity:.4}
-.upload-text{font-size:14px;color:var(--color-text-secondary)}
-.upload-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:4px}
-#file-input{display:none}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:13px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);transition:background .15s}
-.btn:hover{background:var(--color-background-secondary)}
-.btn.primary{background:#178AE2;border-color:#178AE2;color:white}
-.btn.primary:hover{background:#1478C5}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.preview-wrap{position:relative;border-radius:var(--border-radius-md);overflow:hidden;background:#000;min-height:200px;display:flex;align-items:center;justify-content:center}
-#preview-img{max-width:100%;max-height:340px;display:block}
-#overlay-canvas{position:absolute;top:0;left:0;pointer-events:none}
-.empty-preview{color:var(--color-text-tertiary);font-size:13px}
-.pipeline{display:flex;flex-direction:column;gap:0}
-.pipe-step{display:flex;align-items:center;gap:12px;padding:10px 0}
-.pipe-step:not(:last-child){border-bottom:0.5px solid var(--color-border-tertiary)}
-.step-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:500}
-.step-idle{background:var(--color-background-secondary);color:var(--color-text-tertiary)}
-.step-running{background:#E6F1FB;color:#185FA5;animation:pulse 1s infinite}
-.step-done{background:#EAF3DE;color:#3B6D11}
-.step-err{background:#FCEBEB;color:#A32D2D}
-.step-label{font-size:13px;color:var(--color-text-primary)}
-.step-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
-.alerts-list{display:flex;flex-direction:column;gap:8px}
-.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--border-radius-md);border:0.5px solid}
-.alert-danger{background:#FCEBEB;border-color:#F7C1C1;color:#791F1F}
-.alert-warn{background:#FAEEDA;border-color:#FAC775;color:#633806}
-.alert-ok{background:#EAF3DE;border-color:#C0DD97;color:#27500A}
-.alert-icon{width:16px;height:16px;flex-shrink:0;margin-top:1px}
-.alert-msg{font-size:13px;line-height:1.5}
-.alert-tag{font-size:11px;opacity:.7;margin-top:3px}
-.empty-state{text-align:center;padding:32px;color:var(--color-text-tertiary);font-size:13px}
-.history-table{width:100%;border-collapse:collapse;font-size:13px}
-.history-table th{text-align:left;padding:8px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
-.history-table td{padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
-.badge-ok{background:#EAF3DE;color:#27500A}
-.badge-fail{background:#FCEBEB;color:#791F1F}
-.badge-warn{background:#FAEEDA;color:#633806}
-.confidence-bar{height:6px;border-radius:3px;background:var(--color-background-secondary);overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
-.confidence-fill{height:100%;background:#178AE2;border-radius:3px}
-.confidence-fill.low{background:#E24B4A}
-.confidence-fill.med{background:#EF9F27}
-.spinner{width:16px;height:16px;border:2px solid var(--color-border-secondary);border-top-color:#178AE2;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.actions-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.result-section{margin-top:14px}
-.result-header{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
-.person-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
-.person-row:last-child{border-bottom:none}
-.person-id{width:24px;height:24px;border-radius:50%;background:var(--color-background-info);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#0C447C;flex-shrink:0}
-.person-info{flex:1;font-size:13px}
-.person-sub{font-size:11px;color:var(--color-text-secondary)}
+.logo-mark{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:16px;height:16px;fill:#fff}
+.logo-name{font-size:14px;font-weight:500;color:var(--text);letter-spacing:.01em}
+.logo-ver{font-size:11px;color:var(--text3);margin-left:6px;padding:2px 6px;border:1px solid var(--border2);border-radius:4px}
+.top-right{display:flex;align-items:center;gap:14px}
+.api-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.pulse.on{animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.body{display:flex;flex:1;min-height:0}
+.sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--border);padding:12px 8px;display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:1px solid transparent}
+.nav:hover{background:var(--bg3);color:var(--text)}
+.nav.on{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.nav svg{width:15px;height:15px;fill:currentColor;flex-shrink:0}
+.nav-section{font-size:10px;color:var(--text3);padding:8px 10px 4px;letter-spacing:.08em;text-transform:uppercase}
+.content{flex:1;overflow:auto;padding:20px}
+.pg{display:none}.pg.on{display:block}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card-hd{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.mcard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.mlabel{font-size:11px;color:var(--text3);margin-bottom:5px}
+.mval{font-size:22px;font-weight:500;color:var(--text)}
+.mval.g{color:var(--green)}.mval.r{color:var(--red)}.mval.a{color:var(--amber)}
+.drop{border:1px dashed var(--border2);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;transition:background .15s;margin-bottom:12px}
+.drop:hover{background:var(--bg3);border-color:var(--accent)}
+.drop-icon{width:32px;height:32px;margin:0 auto 10px;opacity:.35}
+.drop-icon svg{width:100%;height:100%;fill:var(--text)}
+.drop-t{font-size:13px;color:var(--text2)}
+.drop-s{font-size:11px;color:var(--text3);margin-top:3px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);font-size:12px;cursor:pointer;background:var(--bg3);color:var(--text2);font-family:var(--font-sans);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent2);color:#fff}
+.btn.primary:hover{background:var(--accent2)}
+.btn svg{width:13px;height:13px;fill:currentColor}
+.preview-box{background:#000;border-radius:8px;border:1px solid var(--border);min-height:220px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:10px}
+.preview-box img{max-width:100%;max-height:300px;display:block}
+#ov-canvas{
+  position:absolute;
+  pointer-events:none;
+}
+.empty-lbl{font-size:13px;color:var(--text3)}
+.tog-row{display:flex;gap:6px;flex-wrap:wrap}
+.tog{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);font-size:11px;cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s}
+.tog:hover{border-color:var(--border2);color:var(--text)}
+.tog.active{color:var(--text)}
+.dot-tog{width:8px;height:8px;border-radius:50%}
+.pipe-list{display:flex;flex-direction:column}
+.pipe-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.pipe-row:last-child{border:none}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--text3);flex-shrink:0}
+.step-num.run{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);animation:blink .8s infinite}
+.step-num.done{border-color:var(--green-border);background:var(--green-bg);color:var(--green)}
+.step-num.err{border-color:var(--red-border);background:var(--red-bg);color:var(--red)}
+.step-label{font-size:13px;color:var(--text);line-height:1.4}
+.step-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.novelty-tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);margin-left:5px;vertical-align:middle;letter-spacing:.03em}
+.alert-list{display:flex;flex-direction:column;gap:7px}
+.al{display:flex;gap:9px;padding:9px 11px;border-radius:7px;border:1px solid}
+.al.ok{background:var(--green-bg);border-color:var(--green-border)}
+.al.warn{background:var(--amber-bg);border-color:var(--amber-border)}
+.al.danger{background:var(--red-bg);border-color:var(--red-border)}
+.al-icon{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.al-icon.ok{background:var(--green)}.al-icon.warn{background:var(--amber)}.al-icon.danger{background:var(--red)}
+.al-body{flex:1}
+.al-msg{font-size:12px;font-weight:500}
+.al.ok .al-msg{color:var(--green)}.al.warn .al-msg{color:var(--amber)}.al.danger .al-msg{color:var(--red)}
+.al-detail{font-size:11px;color:var(--text3);margin-top:2px}
+.person-item{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+.person-item:last-child{border:none}
+.pid{width:24px;height:24px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text2);flex-shrink:0}
 .ppe-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.ppe-tag{padding:2px 7px;border-radius:8px;font-size:11px;font-weight:500}
-.tag-present{background:#EAF3DE;color:#27500A}
-.tag-missing{background:#FCEBEB;color:#791F1F}
+.ppe-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.ppe-tag.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.ppe-tag.bad{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.empty-state{color:var(--text3);font-size:13px;text-align:center;padding:24px 0}
+.htable{width:100%;border-collapse:collapse;font-size:12px}
+.htable th{text-align:left;padding:6px 10px;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.htable td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.htable tr:last-child td{border:none}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+.badge.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge.fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.cbar-wrap{height:4px;border-radius:2px;background:var(--bg4);overflow:hidden;width:60px;display:inline-block;vertical-align:middle}
+.cbar-fill{height:100%;border-radius:2px}
+.spinner{width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number]{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:6px 10px;font-size:12px;font-family:var(--font-sans);width:100%}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--accent)}
+label{font-size:12px;color:var(--text2)}
+.setting-row{margin-bottom:14px}
+.setting-label{font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-label{font-size:11px;color:var(--text2);width:100px;flex-shrink:0}
+.bar-track{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--red)}
+.bar-val{font-size:11px;color:var(--text3);width:24px;text-align:right;flex-shrink:0}
 </style>
 
-<div class="app">
+<div class="shell">
   <div class="topbar">
     <div class="logo">
-      <div class="logo-icon">
+      <div class="logo-mark">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       </div>
-      <div>
-        <div class="logo-text">PPE Compliance Monitor</div>
-        <div class="logo-sub">Pose-based detection system</div>
-      </div>
+      <span class="logo-name">PPE Compliance Monitor</span>
+      <span class="logo-ver">v1.0</span>
     </div>
-    <div class="status-pill">
-      <div class="dot online" id="api-dot"></div>
-      <span id="api-status">API Ready</span>
+    <div class="top-right">
+      <div class="api-badge">
+        <div class="pulse on" id="api-dot"></div>
+        <span id="api-label">API ready</span>
+      </div>
     </div>
   </div>
 
-  <div class="main">
+  <div class="body">
     <div class="sidebar">
-      <div class="nav-item active" onclick="showPage('analyze',this)">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <div class="nav-section">Detection</div>
+      <div class="nav on" onclick="nav('analyze',this)">
+        <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
         Analyze
       </div>
-      <div class="nav-item" onclick="showPage('dashboard',this)">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      <div class="nav" onclick="nav('dashboard',this)">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         Dashboard
       </div>
-      <div class="nav-item" onclick="showPage('history',this)">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      <div class="nav" onclick="nav('history',this)">
+        <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
         History
       </div>
-      <div class="nav-item" onclick="showPage('settings',this)">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <div class="nav-section" style="margin-top:8px">System</div>
+      <div class="nav" onclick="nav('settings',this)">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
         Settings
       </div>
     </div>
 
     <div class="content">
 
-      <!-- ANALYZE PAGE -->
-      <div class="page active" id="page-analyze">
-        <div class="two-col">
-          <div>
-            <div class="card" style="margin-bottom:16px">
-              <div class="card-title">Input</div>
-              <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="var(--color-text-tertiary)"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-                <div class="upload-text">Upload image or video frame</div>
-                <div class="upload-sub">Click to browse — JPG, PNG, MP4 supported</div>
+      <div class="pg on" id="pg-analyze">
+        <div class="grid2">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-hd">Input</div>
+              <div class="drop" id="dropzone" onclick="document.getElementById('fi').click()">
+                <div class="drop-icon"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg></div>
+                <div class="drop-t">Drop image here or click to browse</div>
+                <div class="drop-s">JPG, PNG supported</div>
               </div>
-              <input type="file" id="file-input" accept="image/*,video/*">
-              <div class="actions-row">
+              <input type="file" id="fi" accept="image/*" style="display:none">
+              <div class="btn-row">
                 <button class="btn primary" id="run-btn" onclick="runPipeline()" disabled>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  Run Pipeline
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Run pipeline
                 </button>
-                <button class="btn" onclick="loadDemo()">Load demo</button>
-                <button class="btn" id="clear-btn" onclick="clearAll()" disabled>Clear</button>
+                <button class="btn" onclick="loadDemo()">Load demo scene</button>
+                <button class="btn" id="clr-btn" onclick="clearAll()" disabled>Clear</button>
               </div>
             </div>
 
             <div class="card">
-              <div class="card-title">Pipeline status</div>
-              <div class="pipeline" id="pipeline">
-                <div class="pipe-step"><div class="step-icon step-idle" id="s0">1</div><div><div class="step-label">Input validation</div><div class="step-sub" id="s0-sub">Waiting</div></div></div>
-                <div class="pipe-step"><div class="step-icon step-idle" id="s1">2</div><div><div class="step-label">Human detection (YOLO)</div><div class="step-sub" id="s1-sub">Waiting</div></div></div>
-                <div class="pipe-step"><div class="step-icon step-idle" id="s2">3</div><div><div class="step-label">Pose estimation</div><div class="step-sub" id="s2-sub">Waiting</div></div></div>
-                <div class="pipe-step"><div class="step-icon step-idle" id="s3">4</div><div><div class="step-label">PPE detection</div><div class="step-sub" id="s3-sub">Waiting</div></div></div>
-                <div class="pipe-step"><div class="step-icon step-idle" id="s4">5</div><div><div class="step-label">Pose-based PPE verification <span style="font-size:10px;padding:1px 6px;background:#E6F1FB;color:#0C447C;border-radius:8px;font-weight:500">novelty</span></div><div class="step-sub" id="s4-sub">Waiting</div></div></div>
-                <div class="pipe-step"><div class="step-icon step-idle" id="s5">6</div><div><div class="step-label">Compliance decision</div><div class="step-sub" id="s5-sub">Waiting</div></div></div>
+              <div class="card-hd">Pipeline</div>
+              <div class="pipe-list">
+                <div class="pipe-row"><div class="step-num" id="s0">1</div><div><div class="step-label">Input validation</div><div class="step-sub" id="s0s">Waiting</div></div></div>
+                <div class="pipe-row"><div class="step-num" id="s1">2</div><div><div class="step-label">Human detection <span style="font-size:10px;color:var(--text3)">(YOLO)</span></div><div class="step-sub" id="s1s">Waiting</div></div></div>
+                <div class="pipe-row"><div class="step-num" id="s2">3</div><div><div class="step-label">Pose estimation</div><div class="step-sub" id="s2s">Waiting</div></div></div>
+                <div class="pipe-row"><div class="step-num" id="s3">4</div><div><div class="step-label">PPE detection</div><div class="step-sub" id="s3s">Waiting</div></div></div>
+                <div class="pipe-row"><div class="step-num" id="s4">5</div><div><div class="step-label">Pose-based PPE verification<span class="novelty-tag">novelty</span></div><div class="step-sub" id="s4s">Waiting</div></div></div>
+                <div class="pipe-row"><div class="step-num" id="s5">6</div><div><div class="step-label">Compliance decision</div><div class="step-sub" id="s5s">Waiting</div></div></div>
               </div>
             </div>
           </div>
 
-          <div>
-            <div class="card" style="margin-bottom:16px">
-              <div class="card-title">Visual output</div>
-              <div class="preview-wrap" id="preview-wrap">
-                <div class="empty-state">No image loaded</div>
-                <img id="preview-img" style="display:none">
-                <canvas id="overlay-canvas" style="display:none"></canvas>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-hd">Visual output</div>
+              <div class="preview-box" id="pvbox">
+                <span class="empty-lbl" id="pvempty">No image loaded</span>
+                <img id="pvimg" style="display:none;max-width:100%;max-height:280px">
+                <canvas id="ov-canvas" style="display:none;position:absolute;top:0;left:0;pointer-events:none"></canvas>
               </div>
-              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap" id="overlay-controls" style="display:none">
-                <button class="btn" onclick="toggleOverlay('persons')" id="tog-persons" style="display:none">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#178AE2;display:inline-block"></span> Persons
-                </button>
-                <button class="btn" onclick="toggleOverlay('ppe')" id="tog-ppe" style="display:none">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#3B6D11;display:inline-block"></span> PPE
-                </button>
-                <button class="btn" onclick="toggleOverlay('pose')" id="tog-pose" style="display:none">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#854F0B;display:inline-block"></span> Pose
-                </button>
+              <div class="tog-row" id="tog-row" style="display:none">
+                <div class="tog active" id="tog-p" onclick="toggleOv('p',this)"><div class="dot-tog" style="background:var(--blue)"></div>Persons</div>
+                <div class="tog active" id="tog-e" onclick="toggleOv('e',this)"><div class="dot-tog" style="background:var(--green)"></div>PPE</div>
+                <div class="tog active" id="tog-sk" onclick="toggleOv('sk',this)"><div class="dot-tog" style="background:var(--amber)"></div>Skeleton</div>
               </div>
             </div>
 
             <div class="card">
-              <div class="card-title">Compliance alerts</div>
-              <div id="alerts-container">
-                <div class="empty-state">Run the pipeline to see alerts</div>
-              </div>
-              <div class="result-section" id="persons-result" style="display:none">
-                <div class="result-header">Detected persons</div>
-                <div id="persons-list"></div>
+              <div class="card-hd">Compliance alerts</div>
+              <div id="alert-box"><div class="empty-state">Run pipeline to see alerts</div></div>
+              <div id="person-box" style="display:none;margin-top:12px">
+                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Detected persons</div>
+                <div id="person-list"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- DASHBOARD PAGE -->
-      <div class="page" id="page-dashboard">
-        <div class="metrics-row">
-          <div class="metric-card"><div class="metric-label">Total scans</div><div class="metric-val" id="m-total">0</div></div>
-          <div class="metric-card"><div class="metric-label">Compliant</div><div class="metric-val success" id="m-compliant">0</div></div>
-          <div class="metric-card"><div class="metric-label">Violations</div><div class="metric-val danger" id="m-violations">0</div></div>
-          <div class="metric-card"><div class="metric-label">Compliance rate</div><div class="metric-val warn" id="m-rate">—</div></div>
+      <div class="pg" id="pg-dashboard">
+        <div class="metrics" id="metrics">
+          <div class="mcard"><div class="mlabel">Total scans</div><div class="mval" id="m0">0</div></div>
+          <div class="mcard"><div class="mlabel">Persons detected</div><div class="mval" id="m1">0</div></div>
+          <div class="mcard"><div class="mlabel">Violations</div><div class="mval r" id="m2">0</div></div>
+          <div class="mcard"><div class="mlabel">Compliance rate</div><div class="mval a" id="m3">—</div></div>
         </div>
-        <div class="two-col">
+        <div class="grid2">
           <div class="card">
-            <div class="card-title">Recent violations</div>
-            <div id="recent-violations"><div class="empty-state">No scans yet</div></div>
+            <div class="card-hd">Recent violations</div>
+            <div id="dash-violations"><div class="empty-state">No scans yet</div></div>
           </div>
           <div class="card">
-            <div class="card-title">PPE miss frequency</div>
-            <div id="ppe-frequency"><div class="empty-state">No data yet</div></div>
+            <div class="card-hd">PPE miss breakdown</div>
+            <div id="dash-bars"><div class="empty-state">No data yet</div></div>
           </div>
         </div>
       </div>
 
-      <!-- HISTORY PAGE -->
-      <div class="page" id="page-history">
+      <div class="pg" id="pg-history">
         <div class="card">
-          <div class="card-title" style="margin-bottom:0">Scan history</div>
-          <div id="history-container" style="margin-top:12px"><div class="empty-state">No scans yet</div></div>
+          <div class="card-hd" style="margin-bottom:10px">Scan history</div>
+          <div id="hist-box"><div class="empty-state">No scans recorded</div></div>
         </div>
       </div>
 
-      <!-- SETTINGS PAGE -->
-      <div class="page" id="page-settings">
-        <div class="card" style="max-width:520px">
-          <div class="card-title">Backend connection</div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px">API Base URL</label>
-            <input type="text" id="api-url" value="http://localhost:8000" style="width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans)">
+      <div class="pg" id="pg-settings">
+        <div class="card" style="max-width:480px">
+          <div class="card-hd">Backend connection</div>
+          <div class="setting-row">
+            <div class="setting-label">API base URL</div>
+            <input type="text" id="api-url" value="http://127.0.0.1:8000">
           </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px">Required PPE items</label>
-            <div style="display:flex;flex-wrap:wrap;gap:8px" id="ppe-checkboxes">
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" checked data-ppe="helmet"> Helmet</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" checked data-ppe="vest"> Vest</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" data-ppe="gloves"> Gloves</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" data-ppe="mask"> Mask</label>
-              <label style="display:flex;align-items:center;gap=6px;font-size:13px;cursor:pointer"><input type="checkbox" data-ppe="goggles"> Goggles</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" data-ppe="boots"> Safety boots</label>
-            </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:18px">
+            <button class="btn primary" onclick="testConn()">Test connection</button>
+            <span id="conn-msg" style="font-size:12px;color:var(--text3)"></span>
           </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px">Confidence threshold: <span id="thresh-val">0.50</span></label>
-            <input type="range" min="0.1" max="0.95" step="0.05" value="0.50" id="conf-thresh" oninput="document.getElementById('thresh-val').textContent=parseFloat(this.value).toFixed(2)" style="width:100%">
+          <div class="setting-label" style="margin-bottom:8px">Required PPE</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px" id="ppe-cbs">
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" checked data-ppe="helmet"> Helmet</label>
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" checked data-ppe="vest"> Safety vest</label>
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" data-ppe="gloves"> Gloves</label>
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" data-ppe="mask"> Mask</label>
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" data-ppe="goggles"> Goggles</label>
+            <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" data-ppe="boots"> Safety boots</label>
           </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px">Overlay opacity: <span id="opacity-val">60</span>%</label>
-            <input type="range" min="10" max="100" step="5" value="60" id="overlay-opacity" oninput="document.getElementById('opacity-val').textContent=this.value;redrawOverlay()" style="width:100%">
+          <div class="setting-row">
+            <div class="setting-label">Confidence threshold: <span id="ct-val">0.50</span></div>
+            <input type="range" min="0.1" max="0.95" step="0.05" value="0.50" id="ct" oninput="document.getElementById('ct-val').textContent=parseFloat(this.value).toFixed(2)" style="width:100%;margin-top:6px">
           </div>
-          <button class="btn primary" onclick="testConnection()">Test connection</button>
-          <span id="conn-result" style="font-size:12px;color:var(--color-text-secondary);margin-left:10px"></span>
+          <div class="setting-row">
+            <div class="setting-label">Overlay opacity: <span id="op-val">65</span>%</div>
+            <input type="range" min="10" max="100" step="5" value="65" id="op" oninput="document.getElementById('op-val').textContent=this.value;redraw()" style="width:100%;margin-top:6px">
+          </div>
         </div>
       </div>
 
@@ -267,374 +282,368 @@ body{font-family:var(--font-sans);background:var(--color-background-tertiary)}
 </div>
 
 <script>
-let scanHistory = [];
-let currentResult = null;
-let overlayFlags = {persons:true, ppe:true, pose:true};
-let demoMode = false;
+let history2=[], curResult=null, demoMode=false;
+let ovFlags={p:true,e:true,sk:true};
 
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  el.classList.add('active');
-  if(id==='dashboard') updateDashboard();
-  if(id==='history') updateHistory();
+function nav(id,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  el.classList.add('on');
+  if(id==='dashboard')updateDash();
+  if(id==='history')updateHist();
 }
 
-document.getElementById('file-input').addEventListener('change', e=>{
-  if(e.target.files[0]) loadFile(e.target.files[0]);
-});
+document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])readFile(e.target.files[0])});
 
-const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover', e=>{e.preventDefault();dz.style.background='var(--color-background-secondary)'});
-dz.addEventListener('dragleave', ()=>dz.style.background='');
-dz.addEventListener('drop', e=>{e.preventDefault();dz.style.background='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+const dz=document.getElementById('dropzone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--accent)'});
+dz.addEventListener('dragleave',()=>dz.style.borderColor='');
+dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0])});
 
-function loadFile(file) {
-  const reader = new FileReader();
-  reader.onload = ev=>{
-    showPreview(ev.target.result);
-    document.getElementById('run-btn').disabled = false;
-    document.getElementById('clear-btn').disabled = false;
+function readFile(f){
+  const r=new FileReader();
+  r.onload=ev=>{showPreview(ev.target.result);enable()};
+  r.readAsDataURL(f); demoMode=false;
+}
+
+function enable(){document.getElementById('run-btn').disabled=false;document.getElementById('clr-btn').disabled=false;}
+
+function showPreview(src){
+  const empty=document.getElementById('pvempty');
+  const img=document.getElementById('pvimg');
+  const cv=document.getElementById('ov-canvas');
+  if(empty)empty.style.display='none';
+  img.style.display='block'; img.src=src;
+  img.onload = () => {
+    const w = img.clientWidth;
+    const h = img.clientHeight;
+
+    cv.width = w;
+    cv.height = h;
+
+    cv.style.width = w + 'px';
+    cv.style.height = h + 'px';
+
+    cv.style.top = img.offsetTop + 'px';
+    cv.style.left = img.offsetLeft + 'px';
+
+    cv.style.display = 'none';
   };
-  reader.readAsDataURL(file);
-  demoMode = false;
 }
 
-function showPreview(src) {
-  const wrap = document.getElementById('preview-wrap');
-  const img = document.getElementById('preview-img');
-  const canvas = document.getElementById('overlay-canvas');
-  wrap.querySelector('.empty-state') && (wrap.querySelector('.empty-state').style.display='none');
-  img.src = src;
-  img.style.display = 'block';
-  img.onload = ()=>{
-    canvas.width = img.offsetWidth;
-    canvas.height = img.offsetHeight;
-    canvas.style.width = img.offsetWidth+'px';
-    canvas.style.height = img.offsetHeight+'px';
-    canvas.style.display = 'none';
-  };
+function loadDemo(){
+  demoMode=true;
+  const c=document.createElement('canvas');c.width=500;c.height=380;
+  const x=c.getContext('2d');
+  x.fillStyle='#1a1a2e';x.fillRect(0,0,500,380);
+  x.fillStyle='#16213e';x.fillRect(0,300,500,80);
+  for(let i=0;i<5;i++){x.fillStyle='#0f3460';x.fillRect(60+i*80,260,50,120);}
+  drawWorker(x,100,80,true,true);
+  drawWorker(x,260,85,true,false);
+  drawWorker(x,400,82,false,false);
+  showPreview(c.toDataURL()); enable(); demoMode=true;
 }
 
-function loadDemo() {
-  demoMode = true;
-  const canvas = document.createElement('canvas');
-  canvas.width = 480; canvas.height = 360;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#2a2a2a';
-  ctx.fillRect(0,0,480,360);
-  ctx.fillStyle = '#444';
-  for(let i=0;i<6;i++){ctx.fillRect(60+i*70,260,40,100)}
-  ctx.fillStyle = '#555';
-  ctx.fillRect(0,240,480,120);
-  drawDemoPerson(ctx, 100, 80, true, true);
-  drawDemoPerson(ctx, 280, 90, true, false);
-  drawDemoPerson(ctx, 390, 85, false, false);
-  const src = canvas.toDataURL();
-  showPreview(src);
-  document.getElementById('run-btn').disabled = false;
-  document.getElementById('clear-btn').disabled = false;
+function drawWorker(x,cx,cy,helmet,vest){
+  x.fillStyle='#c9a87c';x.beginPath();x.arc(cx,cy,15,0,Math.PI*2);x.fill();
+  if(helmet){x.fillStyle='#f59e0b';x.beginPath();x.arc(cx,cy-8,17,Math.PI,0);x.fill();}
+  x.fillStyle=vest?'#f97316':'#4b5563';
+  x.fillRect(cx-13,cy+15,26,34);
+  x.fillStyle='#c9a87c';
+  x.fillRect(cx-20,cy+17,8,26);x.fillRect(cx+12,cy+17,8,26);
+  x.fillRect(cx-9,cy+49,9,30);x.fillRect(cx+1,cy+49,9,30);
 }
 
-function drawDemoPerson(ctx, x, y, hasHelmet, hasVest) {
-  ctx.fillStyle = '#8B7355';
-  ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI*2); ctx.fill();
-  if(hasHelmet){ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(x,y-10,18,Math.PI,0);ctx.fill();}
-  ctx.fillStyle = hasVest ? '#FF6600' : '#6B8CAE';
-  ctx.fillRect(x-14, y+16, 28, 35);
-  ctx.fillStyle = '#8B7355';
-  ctx.fillRect(x-22, y+18, 9, 28);
-  ctx.fillRect(x+13, y+18, 9, 28);
-  ctx.fillRect(x-10, y+51, 10, 32);
-  ctx.fillRect(x+1, y+51, 10, 32);
+function setStep(i,st,sub){
+  const el=document.getElementById('s'+i);
+  el.className='step-num'+(st?' '+st:'');
+  el.innerHTML=st==='run'?'<div class="spinner"></div>':st==='done'?'&#10003;':st==='err'?'&#10007;':(i+1);
+  if(sub)document.getElementById('s'+i+'s').textContent=sub;
 }
 
-function setStep(i, state, sub) {
-  const el = document.getElementById('s'+i);
-  el.className = 'step-icon step-'+state;
-  el.innerHTML = state==='running' ? '<div class="spinner" style="width:14px;height:14px"></div>' : (state==='done'?'✓':state==='err'?'✕':(i+1));
-  if(sub) document.getElementById('s'+i+'-sub').textContent = sub;
-}
+function resetSteps(){for(let i=0;i<6;i++)setStep(i,'','Waiting')}
 
-function resetSteps(){for(let i=0;i<6;i++)setStep(i,'idle','Waiting')}
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
 
-async function runPipeline() {
-  resetSteps();
-  clearAlerts();
-  const btn = document.getElementById('run-btn');
-  btn.disabled = true;
+async function runPipeline(){
+  resetSteps(); clearResults();
+  document.getElementById('run-btn').disabled=true;
+  const file=document.getElementById('fi').files[0];
+  const api=document.getElementById('api-url').value;
 
-  const file = document.getElementById('file-input').files[0];
-  const apiUrl = document.getElementById('api-url').value;
-
-  const steps = [
-    [0,'Validating input...','Input OK'],
-    [1,'Running YOLO detection...','Humans located'],
-    [2,'Estimating body pose...','Keypoints extracted'],
-    [3,'Scanning for PPE...','PPE scan complete'],
-    [4,'Cross-validating pose + PPE...','Pose-based verification done'],
-    [5,'Generating compliance report...','Decision ready']
-  ];
-
-  if(!demoMode && file) {
-    try {
-      setStep(0,'running','Validating...');
-      await delay(300);
-      setStep(0,'done','Input OK');
-      setStep(1,'running','Detecting humans...');
-
-      const formData = new FormData();
-      formData.append('file', file);
-      const thresh = document.getElementById('conf-thresh').value;
-      formData.append('confidence_threshold', thresh);
-      const required = [...document.querySelectorAll('[data-ppe]:checked')].map(c=>c.dataset.ppe);
-      formData.append('required_ppe', JSON.stringify(required));
-
-      const resp = await fetch(apiUrl+'/analyze', {method:'POST', body:formData});
-      if(!resp.ok) throw new Error('API error '+resp.status);
-      const data = await resp.json();
-
-      for(let i=1;i<6;i++){setStep(i,'running',steps[i][1]);await delay(250);setStep(i,'done',steps[i][2]);}
+  if(!demoMode&&file){
+    try{
+      setStep(0,'run','Validating input...');await delay(300);setStep(0,'done','Input OK');
+      setStep(1,'run','Running YOLO...');
+      const fd=new FormData();fd.append('file',file);
+      fd.append('confidence_threshold',document.getElementById('ct').value);
+      const req=[...document.querySelectorAll('[data-ppe]:checked')].map(c=>c.dataset.ppe);
+      fd.append('required_ppe',JSON.stringify(req));
+      const res=await fetch(api+'/analyze',{method:'POST',body:fd});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      for(let i=1;i<6;i++){setStep(i,'run','Processing...');await delay(220);setStep(i,'done','Done');}
       handleResult(data);
-    } catch(err) {
-      for(let i=0;i<6;i++){const s=document.getElementById('s'+i);if(s.className.includes('idle'))setStep(i,'err','Failed')}
-      showAlertItem('danger','API error: '+err.message,'Check your backend is running at '+apiUrl);
+    }catch(e){
+      for(let i=0;i<6;i++)if(document.getElementById('s'+i).innerHTML.match(/^\d/))setStep(i,'err','Failed');
+      showAlert([{severity:'danger',message:'API error: '+e.message,detail:'Is your FastAPI running at '+api+'?'}]);
     }
   } else {
-    for(let i=0;i<6;i++){setStep(i,'running',steps[i][1]);await delay(350);setStep(i,'done',steps[i][2]);}
-    handleResult(getMockResult());
+    const steps=['Validating...','Detecting humans...','Estimating pose...','Scanning PPE...','Cross-verifying...','Deciding compliance...'];
+    const done=['Input OK','3 persons detected','Keypoints extracted','PPE scan done','Pose verification done','Report ready'];
+    for(let i=0;i<6;i++){setStep(i,'run',steps[i]);await delay(380);setStep(i,'done',done[i]);}
+    handleResult(getMock());
   }
-  btn.disabled = false;
+  document.getElementById('run-btn').disabled=false;
 }
 
-function delay(ms){return new Promise(r=>setTimeout(r,ms))}
-
-function getMockResult() {
+function getMock(){
   return {
-    persons: [
-      {id:1, bbox:[65,60,155,240], confidence:0.94, compliant:true, ppe:{helmet:{present:true,confidence:0.96},vest:{present:true,confidence:0.91}}, pose_valid:true},
-      {id:2, bbox:[248,68,338,248], confidence:0.88, compliant:false, ppe:{helmet:{present:true,confidence:0.87},vest:{present:false,confidence:0.12}}, pose_valid:true},
-      {id:3, bbox:[358,63,440,243], confidence:0.85, compliant:false, ppe:{helmet:{present:false,confidence:0.08},vest:{present:false,confidence:0.09}}, pose_valid:false}
+    persons:[
+      {id:1,bbox:[65,58,150,238],confidence:.94,compliant:true,pose_valid:true,ppe:{helmet:{present:true,confidence:.96},vest:{present:true,confidence:.91}}},
+      {id:2,bbox:[228,65,328,242],confidence:.88,compliant:false,pose_valid:true,ppe:{helmet:{present:true,confidence:.87},vest:{present:false,confidence:.11}}},
+      {id:3,bbox:[362,60,448,240],confidence:.83,compliant:false,pose_valid:false,ppe:{helmet:{present:false,confidence:.07},vest:{present:false,confidence:.09}}}
     ],
     alerts:[
-      {severity:'danger',message:'Person #3 missing helmet and vest',detail:'No PPE detected — pose estimation failed (occluded)'},
-      {severity:'warn',message:'Person #2 missing safety vest',detail:'Helmet present but vest not detected at required confidence'},
-      {severity:'ok',message:'Person #1 fully compliant',detail:'Helmet ✓  Vest ✓  Pose verified ✓'}
+      {severity:'danger',message:'Person #3 — no PPE detected',detail:'Helmet missing, vest missing. Pose occluded.'},
+      {severity:'warn',message:'Person #2 — safety vest missing',detail:'Helmet present (87%). Vest not detected.'},
+      {severity:'ok',message:'Person #1 — fully compliant',detail:'Helmet 96%  ·  Vest 91%  ·  Pose verified'}
     ],
     summary:{total_persons:3,compliant:1,violations:2,compliance_rate:33}
   };
 }
 
-function handleResult(data) {
-  currentResult = data;
-  renderAlerts(data.alerts||[]);
+function handleResult(data){
+  curResult=data;
+  showAlert(data.alerts||[]);
   renderPersons(data.persons||[]);
   drawOverlay(data);
-  saveToHistory(data);
-  ['persons','ppe','pose'].forEach(t=>{
-    const btn=document.getElementById('tog-'+t);
-    if(btn){btn.style.display='inline-flex';}
-  });
+  saveHist(data);
+  document.getElementById('tog-row').style.display='flex';
 }
 
-function renderAlerts(alerts) {
-  const c = document.getElementById('alerts-container');
-  if(!alerts.length){c.innerHTML='<div class="empty-state">No alerts generated</div>';return;}
-  c.innerHTML = alerts.map(a=>`
-    <div class="alert-item alert-${a.severity}" style="margin-bottom:6px">
-      <div class="alert-msg"><strong>${a.message}</strong><div class="alert-tag">${a.detail||''}</div></div>
-    </div>`).join('');
+function showAlert(alerts){
+  const b=document.getElementById('alert-box');
+  if(!alerts.length){b.innerHTML='<div class="empty-state">No alerts</div>';return;}
+  b.innerHTML='<div class="alert-list">'+alerts.map(a=>`
+    <div class="al ${a.severity}">
+      <div class="al-icon ${a.severity}"></div>
+      <div class="al-body"><div class="al-msg">${a.message}</div><div class="al-detail">${a.detail||''}</div></div>
+    </div>`).join('')+'</div>';
 }
 
-function clearAlerts(){
-  document.getElementById('alerts-container').innerHTML='<div class="empty-state">Run the pipeline to see alerts</div>';
-  document.getElementById('persons-result').style.display='none';
-}
-
-function showAlertItem(sev,msg,detail){
-  document.getElementById('alerts-container').innerHTML=`<div class="alert-item alert-${sev}"><div class="alert-msg"><strong>${msg}</strong><div class="alert-tag">${detail}</div></div></div>`;
-}
-
-function renderPersons(persons){
-  const c=document.getElementById('persons-result');
-  const l=document.getElementById('persons-list');
-  if(!persons.length){c.style.display='none';return;}
-  c.style.display='block';
-  l.innerHTML=persons.map(p=>{
-    const tags=Object.entries(p.ppe||{}).map(([k,v])=>
-      `<span class="ppe-tag ${v.present?'tag-present':'tag-missing'}">${k} ${v.present?'✓':'✕'}</span>`
-    ).join('');
-    return `<div class="person-row">
-      <div class="person-id">#${p.id}</div>
-      <div class="person-info">
-        <div>${p.compliant?'<span style="color:#3B6D11;font-weight:500">Compliant</span>':'<span style="color:#A32D2D;font-weight:500">Non-compliant</span>'} <span style="font-size:11px;color:var(--color-text-tertiary)">conf ${(p.confidence*100).toFixed(0)}%</span></div>
+function renderPersons(ps){
+  const b=document.getElementById('person-box');
+  const l=document.getElementById('person-list');
+  if(!ps.length){b.style.display='none';return;}
+  b.style.display='block';
+  l.innerHTML=ps.map(p=>{
+    const tags=Object.entries(p.ppe||{}).map(([k,v])=>`<span class="ppe-tag ${v.present?'ok':'bad'}">${k} ${v.present?'':'missing'}</span>`).join('');
+    return `<div class="person-item">
+      <div class="pid">#${p.id}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:${p.compliant?'var(--green)':'var(--red)'}">${p.compliant?'Compliant':'Non-compliant'} <span style="font-size:10px;color:var(--text3)">conf ${Math.round(p.confidence*100)}%</span></div>
         <div class="ppe-tags">${tags}</div>
-        <div class="person-sub">Pose valid: ${p.pose_valid?'Yes':'No (occluded)'}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Pose: ${p.pose_valid?'valid':'occluded'}</div>
       </div>
     </div>`;
   }).join('');
 }
 
-function drawOverlay(data){
-  const img=document.getElementById('preview-img');
-  const canvas=document.getElementById('overlay-canvas');
-  if(!img.naturalWidth)return;
-  const scaleX=img.offsetWidth/img.naturalWidth;
-  const scaleY=img.offsetHeight/img.naturalHeight;
-  canvas.width=img.offsetWidth;canvas.height=img.offsetHeight;
-  canvas.style.width=img.offsetWidth+'px';canvas.style.height=img.offsetHeight+'px';
-  canvas.style.display='block';
-  redrawOverlay();
+function clearResults(){
+  document.getElementById('alert-box').innerHTML='<div class="empty-state">Run pipeline to see alerts</div>';
+  document.getElementById('person-box').style.display='none';
+  document.getElementById('tog-row').style.display='none';
+  const cv=document.getElementById('ov-canvas');cv.style.display='none';
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
 }
 
-function redrawOverlay(){
-  if(!currentResult)return;
-  const img=document.getElementById('preview-img');
-  const canvas=document.getElementById('overlay-canvas');
-  const ctx=canvas.getContext('2d');
-  const op=parseInt(document.getElementById('overlay-opacity').value)/100;
-  const scaleX=img.offsetWidth/(img.naturalWidth||480);
-  const scaleY=img.offsetHeight/(img.naturalHeight||360);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!currentResult.persons)return;
-  currentResult.persons.forEach(p=>{
-    const[x1,y1,x2,y2]=p.bbox.map((v,i)=>v*(i%2===0?scaleX:scaleY));
+function drawOverlay(data){
+  const img=document.getElementById('pvimg');
+  const cv=document.getElementById('ov-canvas');
+  if(!img.naturalWidth)return;
+  const w = img.clientWidth;
+  const h = img.clientHeight;
+
+  cv.width = w;
+  cv.height = h;
+
+  cv.style.width = w + 'px';
+  cv.style.height = h + 'px';
+
+  cv.style.top = img.offsetTop + 'px';
+  cv.style.left = img.offsetLeft + 'px';
+
+  cv.style.display='block';
+  redraw();
+}
+
+function redraw(){
+  if(!curResult)return;
+  const img=document.getElementById('pvimg');
+  const cv=document.getElementById('ov-canvas');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const op=parseInt(document.getElementById('op').value)/100;
+  const sx = img.clientWidth / img.naturalWidth;
+  const sy = img.clientHeight / img.naturalHeight;
+
+  (curResult.persons||[]).forEach(p=>{
+    const[x1,y1,x2,y2]=p.bbox.map((v,i)=>v*(i%2===0?sx:sy));
     const w=x2-x1,h=y2-y1;
-    if(overlayFlags.persons){
-      const col=p.compliant?'rgba(59,109,17,'+op+')':'rgba(163,45,45,'+op+')';
-      ctx.strokeStyle=p.compliant?'#3B6D11':'#A32D2D';
-      ctx.lineWidth=2;
+    const col=p.compliant?'34,197,94':'239,68,68';
+
+    if(ovFlags.p){
+      ctx.strokeStyle=`rgb(${col})`;ctx.lineWidth=1.5;
       ctx.strokeRect(x1,y1,w,h);
-      ctx.fillStyle=col;
+      ctx.fillStyle=`rgba(${col},${op*0.35})`;
       ctx.fillRect(x1,y1,w,h);
+      ctx.fillStyle=`rgba(${col},0.9)`;
+      ctx.beginPath();
+      const labelY = Math.max(2, y1 - 18);
+      ctx.roundRect(x1, labelY, 70, 16, 3);
+      ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';
+      ctx.fillText(p.compliant?'COMPLIANT':'VIOLATION',x1+5,y1-7);
     }
-    if(overlayFlags.ppe){
-      const items=Object.entries(p.ppe||{});
-      items.forEach(([k,v],idx)=>{
-        const by=y1+14+idx*16;
-        ctx.fillStyle=v.present?'rgba(59,109,17,0.85)':'rgba(163,45,45,0.85)';
-        ctx.beginPath();ctx.roundRect(x1+4,by-11,k.length*7+10,14,3);ctx.fill();
-        ctx.fillStyle='white';ctx.font='bold 10px sans-serif';
-        ctx.fillText((v.present?'✓ ':'✕ ')+k,x1+8,by);
+
+    if(ovFlags.e){
+      let iy=y1+4;
+      Object.entries(p.ppe||{}).forEach(([k,v])=>{
+        const tc=v.present?'34,197,94':'239,68,68';
+        const lbl=(v.present?'+ ':'- ')+k;
+        ctx.fillStyle=`rgba(${tc},0.85)`;
+        ctx.beginPath();ctx.roundRect(x2+3,iy,lbl.length*5.8+8,14,3);ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='8px sans-serif';
+        ctx.fillText(lbl,x2+7,iy+10);
+        iy+=17;
       });
     }
-    if(overlayFlags.pose&&p.pose_valid){
-      const cx=(x1+x2)/2,cy=y1+h*0.28;
-      ctx.strokeStyle='rgba(133,79,11,0.9)';ctx.lineWidth=2;
-      [[cx,cy,cx-w*.18,cy+h*.15],[cx,cy,cx+w*.18,cy+h*.15],[cx,cy+h*.15,cx,cy+h*.45],
-       [cx,cy+h*.45,cx-w*.12,cy+h*.7],[cx,cy+h*.45,cx+w*.12,cy+h*.7]].forEach(([ax,ay,bx,by])=>{
-        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+
+    if (ovFlags.sk && p.pose_valid && p.keypoints) {
+      ctx.strokeStyle = 'rgba(245,158,11,0.85)';
+      ctx.lineWidth = 2;
+
+      const kpts = p.keypoints.map(k => ({
+        x: k.x * sx,
+        y: k.y * sy
+      }));
+
+      // COCO skeleton connections
+      const edges = [
+        [5,7],[7,9],     // left arm
+        [6,8],[8,10],    // right arm
+        [5,6],           // shoulders
+        [5,11],[6,12],   // torso
+        [11,12],         // hips
+        [11,13],[13,15], // left leg
+        [12,14],[14,16]  // right leg
+      ];
+
+      // Draw lines
+      edges.forEach(([a,b])=>{
+        if(kpts[a] && kpts[b]){
+          ctx.beginPath();
+          ctx.moveTo(kpts[a].x, kpts[a].y);
+          ctx.lineTo(kpts[b].x, kpts[b].y);
+          ctx.stroke();
+        }
       });
-      [cy, cy+h*.15, cy+h*.45, cy+h*.7].forEach(ky=>{
-        [[cx-w*.18,ky-h*.02],[cx,ky],[cx+w*.18,ky-h*.02]].forEach(([kx,ky2])=>{
-          ctx.fillStyle='rgba(239,159,39,0.9)';ctx.beginPath();ctx.arc(kx,ky2,3,0,Math.PI*2);ctx.fill();
-        });
+
+      // Draw joints
+      kpts.forEach(k=>{
+        ctx.beginPath();
+        ctx.arc(k.x, k.y, 3, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(251,191,36,0.95)';
+        ctx.fill();
       });
     }
-    const lbl=p.compliant?'OK':'VIOLATION';
-    ctx.fillStyle=p.compliant?'rgba(59,109,17,0.9)':'rgba(163,45,45,0.9)';
-    ctx.beginPath();ctx.roundRect(x1,y2-18,lbl.length*7+10,16,3);ctx.fill();
-    ctx.fillStyle='white';ctx.font='bold 10px sans-serif';
-    ctx.fillText(lbl,x1+5,y2-6);
   });
 }
 
-function toggleOverlay(type){
-  overlayFlags[type]=!overlayFlags[type];
-  const btn=document.getElementById('tog-'+type);
-  btn.style.opacity=overlayFlags[type]?'1':'0.4';
-  redrawOverlay();
+function toggleOv(k,el){
+  ovFlags[k]=!ovFlags[k];
+  el.classList.toggle('active',ovFlags[k]);
+  el.style.opacity=ovFlags[k]?'1':'0.4';
+  redraw();
 }
 
 function clearAll(){
-  document.getElementById('file-input').value='';
-  document.getElementById('preview-img').style.display='none';
-  document.getElementById('overlay-canvas').style.display='none';
-  const wrap=document.getElementById('preview-wrap');
-  if(!wrap.querySelector('.empty-state')){
-    const es=document.createElement('div');es.className='empty-state';es.textContent='No image loaded';wrap.appendChild(es);
-  } else wrap.querySelector('.empty-state').style.display='';
-  clearAlerts();
-  resetSteps();
-  currentResult=null;
-  demoMode=false;
+  document.getElementById('fi').value='';
+  document.getElementById('pvimg').style.display='none';
+  document.getElementById('pvempty').style.display='';
   document.getElementById('run-btn').disabled=true;
-  document.getElementById('clear-btn').disabled=true;
-  ['persons','ppe','pose'].forEach(t=>{const b=document.getElementById('tog-'+t);if(b)b.style.display='none';});
+  document.getElementById('clr-btn').disabled=true;
+  clearResults(); curResult=null; demoMode=false;
 }
 
-function saveToHistory(data) {
-  const entry={
-    id:Date.now(),
-    ts:new Date().toLocaleString(),
+function saveHist(data){
+  history2.unshift({
+    ts:new Date().toLocaleTimeString(),
     persons:data.persons?.length||0,
     compliant:data.summary?.compliant||0,
     violations:data.summary?.violations||0,
     rate:data.summary?.compliance_rate||0,
     alerts:data.alerts||[]
-  };
-  scanHistory.unshift(entry);
-  if(scanHistory.length>100)scanHistory.pop();
+  });
+  if(history2.length>50)history2.pop();
 }
 
-function updateDashboard() {
-  const total=scanHistory.length;
-  const compliant=scanHistory.reduce((a,s)=>a+s.compliant,0);
-  const violations=scanHistory.reduce((a,s)=>a+s.violations,0);
-  const rate=total?Math.round((compliant/(compliant+violations||1))*100):0;
-  document.getElementById('m-total').textContent=total;
-  document.getElementById('m-compliant').textContent=compliant;
-  document.getElementById('m-violations').textContent=violations;
-  document.getElementById('m-rate').textContent=total?(rate+'%'):'—';
+function updateDash(){
+  const tot=history2.length;
+  const persons=history2.reduce((a,s)=>a+s.persons,0);
+  const viol=history2.reduce((a,s)=>a+s.violations,0);
+  const comp=history2.reduce((a,s)=>a+s.compliant,0);
+  const rate=comp+viol?Math.round(comp/(comp+viol)*100):0;
+  document.getElementById('m0').textContent=tot;
+  document.getElementById('m1').textContent=persons;
+  document.getElementById('m2').textContent=viol;
+  document.getElementById('m3').textContent=tot?(rate+'%'):'—';
 
-  const rv=document.getElementById('recent-violations');
-  const allAlerts=scanHistory.flatMap(s=>s.alerts.filter(a=>a.severity!=='ok'));
-  if(!allAlerts.length){rv.innerHTML='<div class="empty-state">No violations recorded</div>';return;}
-  rv.innerHTML='<div class="alerts-list">'+allAlerts.slice(0,5).map(a=>
-    `<div class="alert-item alert-${a.severity}" style="margin-bottom:4px"><div class="alert-msg">${a.message}<div class="alert-tag">${a.detail||''}</div></div></div>`
-  ).join('')+'</div>';
+  const all=history2.flatMap(s=>s.alerts.filter(a=>a.severity!=='ok'));
+  const dv=document.getElementById('dash-violations');
+  dv.innerHTML=all.length?'<div class="alert-list">'+all.slice(0,5).map(a=>`
+    <div class="al ${a.severity}"><div class="al-icon ${a.severity}"></div>
+    <div class="al-body"><div class="al-msg">${a.message}</div><div class="al-detail">${a.detail||''}</div></div></div>`).join('')+'</div>'
+    :'<div class="empty-state">No violations</div>';
 
-  const ppeMiss={};
-  scanHistory.forEach(s=>s.alerts.forEach(a=>{
-    if(a.severity!=='ok'){const m=a.message.match(/missing (.+)/i);if(m){const k=m[1];ppeMiss[k]=(ppeMiss[k]||0)+1;}}
+  const miss={};
+  history2.forEach(s=>s.alerts.forEach(a=>{
+    if(a.severity!=='ok'){const m=a.message.match(/missing (.+)/i);if(m){const k=m[1].trim();miss[k]=(miss[k]||0)+1;}}
   }));
-  const pf=document.getElementById('ppe-frequency');
-  const entries=Object.entries(ppeMiss).sort((a,b)=>b[1]-a[1]);
-  if(!entries.length){pf.innerHTML='<div class="empty-state">No violations yet</div>';return;}
-  const max=entries[0][1];
-  pf.innerHTML=entries.map(([k,v])=>`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="width:90px;font-size:13px;color:var(--color-text-secondary)">${k}</div>
-      <div style="flex:1;height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden">
-        <div style="width:${Math.round(v/max*100)}%;height:100%;background:#E24B4A;border-radius:4px"></div>
-      </div>
-      <div style="font-size:12px;font-weight:500;min-width:20px">${v}</div>
-    </div>`).join('');
+  const ents=Object.entries(miss).sort((a,b)=>b[1]-a[1]);
+  const db=document.getElementById('dash-bars');
+  db.innerHTML=ents.length?ents.map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-label">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/ents[0][1]*100)}%"></div></div>
+      <div class="bar-val">${v}</div>
+    </div>`).join(''):'<div class="empty-state">No data</div>';
 }
 
-function updateHistory() {
-  const c=document.getElementById('history-container');
-  if(!scanHistory.length){c.innerHTML='<div class="empty-state">No scans yet</div>';return;}
-  c.innerHTML=`<table class="history-table">
-    <thead><tr><th>Time</th><th>Persons</th><th>Compliant</th><th>Violations</th><th>Rate</th><th>Status</th></tr></thead>
-    <tbody>${scanHistory.map(s=>`<tr>
-      <td>${s.ts}</td><td>${s.persons}</td><td style="color:#3B6D11">${s.compliant}</td>
-      <td style="color:#A32D2D">${s.violations}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="confidence-bar"><div class="confidence-fill ${s.rate<50?'low':s.rate<80?'med':''}" style="width:${s.rate}%"></div></div><span style="font-size:12px">${s.rate}%</span></div></td>
-      <td><span class="badge ${s.violations===0?'badge-ok':s.violations>s.compliant?'badge-fail':'badge-warn'}">${s.violations===0?'Pass':s.violations>s.compliant?'Fail':'Partial'}</span></td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+function updateHist(){
+  const hb=document.getElementById('hist-box');
+  if(!history2.length){hb.innerHTML='<div class="empty-state">No scans yet</div>';return;}
+  hb.innerHTML=`<table class="htable"><thead><tr><th>Time</th><th>Persons</th><th>OK</th><th>Violations</th><th>Rate</th><th>Result</th></tr></thead><tbody>
+    ${history2.map(s=>`<tr>
+      <td style="color:var(--text)">${s.ts}</td><td>${s.persons}</td>
+      <td style="color:var(--green)">${s.compliant}</td>
+      <td style="color:var(--red)">${s.violations}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="cbar-wrap"><div class="cbar-fill" style="width:${s.rate}%;background:${s.rate>79?'var(--green)':s.rate>49?'var(--amber)':'var(--red)'}"></div></div><span>${s.rate}%</span></div></td>
+      <td><span class="badge ${s.violations===0?'ok':s.violations>s.compliant?'fail':'warn'}">${s.violations===0?'Pass':s.violations>s.compliant?'Fail':'Partial'}</span></td>
+    </tr>`).join('')}
+  </tbody></table>`;
 }
 
-async function testConnection() {
+async function testConn(){
   const url=document.getElementById('api-url').value;
-  const res=document.getElementById('conn-result');
-  res.textContent='Testing...';
+  const msg=document.getElementById('conn-msg');
+  msg.style.color='var(--text3)';msg.textContent='Connecting...';
   try{
-    const r=await fetch(url+'/health',{signal:AbortSignal.timeout(3000)});
-    if(r.ok){res.style.color='#3B6D11';res.textContent='Connected ✓';}
-    else{res.style.color='#A32D2D';res.textContent='Error: '+r.status;}
-  }catch(e){res.style.color='#A32D2D';res.textContent='Cannot reach API';}
+    const r=await fetch(url+'/health',{signal:AbortSignal.timeout(4000)});
+    if(r.ok){msg.style.color='var(--green)';msg.textContent='Connected';}
+    else{msg.style.color='var(--red)';msg.textContent='Error '+r.status;}
+  }catch{msg.style.color='var(--red)';msg.textContent='Unreachable — start uvicorn first';}
 }
 </script>
